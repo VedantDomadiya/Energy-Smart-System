@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Energy-Smart Stadium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ───────────────────── TOP BAR ───────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18">
+          <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="brand__text">
+        <div class="brand__name">Energy-Smart Stadium</div>
+        <div class="brand__sub">Adaptive IoT &middot; ML control plane</div>
+      </div>
+    </div>
+
+    <nav class="topbar__mid" aria-label="Match timeline">
+      <ol class="phases" id="phases">
+        <li data-phase="Pre-Game"><span>Pre-Game</span></li>
+        <li data-phase="First Half"><span>First Half</span></li>
+        <li data-phase="Halftime"><span>Halftime</span></li>
+        <li data-phase="Second Half"><span>Second Half</span></li>
+        <li data-phase="Post-Game"><span>Post-Game</span></li>
+      </ol>
+      <div class="phases__rail">
+        <div class="phases__fill" id="phaseFill"></div>
+        <div class="phases__cursor" id="phaseCursor" aria-hidden="true"></div>
+      </div>
+    </nav>
+
+    <div class="topbar__right">
+      <div class="clock" id="clock">00:00</div>
+      <div class="live" title="Real-time stream">
+        <span class="live__dot"></span>
+        <span class="live__label">LIVE</span>
+        <span class="live__tick" id="tickLabel">t=0</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ───────────────────── HERO ───────────────────── -->
+  <section class="hero">
+    <div class="hero__lede">
+      <div class="hero__kicker">Energy saved this match <span class="hero__status" id="heroStatus">OPTIMIZING</span></div>
+      <h1 class="hero__number">
+        <span class="hero__sign">&minus;</span><span id="heroSaved" class="num">0.00</span><span class="hero__unit">kWh</span>
+      </h1>
+      <div class="hero__meta">
+        <span id="heroPct" class="pct">0.0%</span>
+        <span class="hero__metaSep">&middot;</span>
+        <span>vs uncontrolled baseline</span>
+        <span class="hero__metaSep">&middot;</span>
+        <span id="heroPhase">Pre-Game</span>
+      </div>
+      <div class="hero__bar" aria-hidden="true">
+        <div class="hero__barBase"></div>
+        <div class="hero__barSmart" id="heroBarSmart"></div>
+        <div class="hero__barLabels">
+          <span>0</span><span>Baseline <b id="heroBaseline">0</b> kWh</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__companions">
+      <div class="companion">
+        <div class="companion__k">Money saved</div>
+        <div class="companion__v"><span class="companion__sym">&#8377;</span><span id="heroInr" class="num">0</span></div>
+        <div class="companion__s">@ &#8377;9.50 / kWh grid tariff</div>
+      </div>
+      <div class="companion">
+        <div class="companion__k">CO&#8322; avoided</div>
+        <div class="companion__v"><span id="heroCo2" class="num">0.0</span><span class="companion__unit">kg</span></div>
+        <div class="companion__s">0.82 kg / kWh grid factor</div>
+      </div>
+      <div class="companion">
+        <div class="companion__k">Load right now</div>
+        <div class="companion__v"><span id="heroLoad" class="num">0</span><span class="companion__unit">kW</span></div>
+        <div class="companion__s">
+          baseline <span id="heroLoadBase" class="num">0</span> kW
+          &nbsp;&middot;&nbsp;
+          <span id="heroLoadDelta" class="delta delta--good">&minus;0 kW</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── MAIN GRID ───────────────────── -->
+  <section class="grid">
+
+    <!-- STADIUM -->
+    <article class="card card--stadium">
+      <header class="card__head">
+        <div>
+          <h2 class="card__title">Stadium</h2>
+          <p class="card__sub">Live zone occupancy &middot; control state per area</p>
+        </div>
+        <div class="legend" aria-label="Legend">
+          <span class="legend__item"><i class="sw sw--calm"></i>efficient</span>
+          <span class="legend__item"><i class="sw sw--warm"></i>optimizing</span>
+          <span class="legend__item"><i class="sw sw--hot"></i>peak</span>
+        </div>
+      </header>
+
+      <div class="stadium" id="stadium" aria-label="Top-down stadium view">
+        <svg class="stadium__svg" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet">
+          <!-- bowl background (concentric rounded rects) -->
+          <defs>
+            <radialGradient id="pitchGrad" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stop-color="#0e2519"/>
+              <stop offset="100%" stop-color="#081a11"/>
+            </radialGradient>
+            <pattern id="pitchStripes" width="40" height="40" patternUnits="userSpaceOnUse">
+              <rect width="40" height="40" fill="url(#pitchGrad)"/>
+              <rect width="20" height="40" fill="#0a1f15" opacity="0.55"/>
+            </pattern>
+          </defs>
+
+          <!-- outer concourse ring -->
+          <rect x="20"  y="20"  width="960" height="680" rx="140" class="bowl bowl--outer"/>
+          <rect x="70"  y="70"  width="860" height="580" rx="110" class="bowl bowl--mid"/>
+          <rect x="130" y="130" width="740" height="460" rx="80"  class="bowl bowl--inner"/>
+
+          <!-- pitch -->
+          <rect x="230" y="210" width="540" height="300" rx="6" fill="url(#pitchStripes)"/>
+          <rect x="230" y="210" width="540" height="300" rx="6" class="pitch__outline"/>
+          <line x1="500" y1="210" x2="500" y2="510" class="pitch__line"/>
+          <circle cx="500" cy="360" r="46" class="pitch__line" fill="none"/>
+          <circle cx="500" cy="360" r="2" class="pitch__dot"/>
+          <rect x="230" y="290" width="40" height="140" class="pitch__line" fill="none"/>
+          <rect x="730" y="290" width="40" height="140" class="pitch__line" fill="none"/>
+
+          <!-- zone polygons; app.js fills text/color into the .zone-* groups -->
+          <g class="zones" id="zones">
+            <!-- North Stand (top) -->
+            <g class="zone" data-zid="north">
+              <path d="M130,130 L870,130 L770,210 L230,210 Z" class="zone__shape"/>
+            </g>
+            <!-- South Stand (bottom) -->
+            <g class="zone" data-zid="south">
+              <path d="M230,510 L770,510 L870,590 L130,590 Z" class="zone__shape"/>
+            </g>
+            <!-- West Stand (left) -->
+            <g class="zone" data-zid="west">
+              <path d="M130,130 L230,210 L230,510 L130,590 Z" class="zone__shape"/>
+            </g>
+            <!-- East Stand (right) -->
+            <g class="zone" data-zid="east">
+              <path d="M770,210 L870,130 L870,590 L770,510 Z" class="zone__shape"/>
+            </g>
+            <!-- Concourse A (outer top) -->
+            <g class="zone" data-zid="conA">
+              <path d="M70,70 L930,70 L870,130 L130,130 Z" class="zone__shape"/>
+            </g>
+            <!-- Concourse B (outer bottom) -->
+            <g class="zone" data-zid="conB">
+              <path d="M130,590 L870,590 L930,650 L70,650 Z" class="zone__shape"/>
+            </g>
+            <!-- Food Court (outer left) -->
+            <g class="zone" data-zid="food">
+              <path d="M70,70 L130,130 L130,590 L70,650 Z" class="zone__shape"/>
+            </g>
+            <!-- Restrooms (outer right) -->
+            <g class="zone" data-zid="rest">
+              <path d="M870,130 L930,70 L930,650 L870,590 Z" class="zone__shape"/>
+            </g>
+          </g>
+
+          <!-- zone labels -->
+          <g class="zones__labels" id="zoneLabels"></g>
+        </svg>
+
+        <!-- floating tooltip -->
+        <div class="ztip" id="ztip" role="tooltip" hidden>
+          <div class="ztip__head">
+            <span class="ztip__name"></span>
+            <span class="ztip__pct"></span>
+          </div>
+          <div class="ztip__rows"></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- LOAD PROFILE -->
+    <article class="card card--chart">
+      <header class="card__head">
+        <div>
+          <h2 class="card__title">Load profile</h2>
+          <p class="card__sub">Baseline vs. smart control &middot; rolling 60s</p>
+        </div>
+        <div class="chart__legend">
+          <span><i class="dot dot--base"></i>Baseline</span>
+          <span><i class="dot dot--smart"></i>Smart</span>
+          <span class="chart__saving"><i class="dot dot--gap"></i>Saved <b id="chartGap">0%</b></span>
+        </div>
+      </header>
+
+      <div class="chartwrap">
+        <canvas id="loadChart"></canvas>
+        <div class="chart__callouts" id="chartCallouts"></div>
+      </div>
+
+      <footer class="card__foot chart__foot">
+        <div><span class="k">Peak baseline</span><span class="v" id="peakBase">&mdash;</span></div>
+        <div><span class="k">Peak smart</span><span class="v" id="peakSmart">&mdash;</span></div>
+        <div><span class="k">Cumulative saved</span><span class="v" id="cumSaved">&mdash;</span></div>
+      </footer>
+    </article>
+  </section>
+
+  <!-- ───────────────────── ZONE INTELLIGENCE ───────────────────── -->
+  <section class="card card--zones">
+    <header class="card__head">
+      <div>
+        <h2 class="card__title">Zone intelligence</h2>
+        <p class="card__sub">Live control state &middot; 15-tick forecast &middot; automated advice</p>
+      </div>
+      <div class="zones__sort">
+        <button class="chip chip--on" data-sort="impact">by impact</button>
+        <button class="chip" data-sort="occ">by occupancy</button>
+        <button class="chip" data-sort="name">A&ndash;Z</button>
+      </div>
+    </header>
+    <div class="ztable" id="ztable" role="table" aria-label="Zones">
+      <div class="ztable__head" role="row">
+        <span role="columnheader">Zone</span>
+        <span role="columnheader">Occupancy</span>
+        <span role="columnheader">Load &rarr; smart</span>
+        <span role="columnheader">Saved</span>
+        <span role="columnheader">Lighting</span>
+        <span role="columnheader">HVAC</span>
+        <span role="columnheader">Screens</span>
+        <span role="columnheader">Next 15 ticks</span>
+        <span role="columnheader">Advice</span>
+      </div>
+      <div class="ztable__body" id="ztableBody"></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────── FOOTER ───────────────────── -->
+  <footer class="foot">
+    <span>Energy-Smart Stadium &middot; Hackathon MVP</span>
+    <span class="foot__stack">FastAPI &middot; WebSocket &middot; Chart.js &middot; Dockerized &middot; GCP-ready</span>
+  </footer>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
