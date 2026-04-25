@@ -2,6 +2,17 @@
 
 Real-time IoT + ML system that reduces energy waste in large sporting venues by 25–40% through zone-aware occupancy tracking and adaptive control of HVAC, lighting, and screens.
 
+## 🚀 Live demo
+
+**[https://energy-smart-stadium-903298971307.asia-south1.run.app](https://energy-smart-stadium-903298971307.asia-south1.run.app)**
+
+Deployed on Google Cloud Run (`asia-south1`), HTTPS, public, scales to zero between hits.
+
+![Dashboard — hero, stadium, load profile](screenshots/dashboard-top.png)
+![Zone intelligence table](screenshots/dashboard-bottom.png)
+
+📹 **Walkthrough video:** [`screenshots/demo.mp4`](screenshots/demo.mp4)
+
 ## What it does
 - Simulates a stadium with 8 zones (stands, concourses, food court, restrooms)
 - Drives a realistic match timeline: Pre-Game → First Half → Halftime → Second Half → Post-Game
@@ -36,7 +47,22 @@ docker compose up --build
 
 Open http://localhost
 
-## Deploy to GCP (e2-micro VM)
+## Deploy to GCP (Cloud Run — what's actually live)
+
+```bash
+gcloud run deploy energy-smart-stadium \
+  --source backend \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --port 8080 \
+  --session-affinity \
+  --timeout 3600 \
+  --memory 512Mi
+```
+
+`--session-affinity` and `--timeout 3600` keep the WebSocket sticky to a single instance for the duration of a match.
+
+## Alternative: GCP e2-micro VM
 
 ### 1. Create the VM
 ```bash
